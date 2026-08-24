@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="ca">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#031016">
+<title>ORBITAL CONTROL // BCN</title>
+<style>
+:root{--bg:#02080c;--panel:#06141b;--line:#164653;--cyan:#61e7ff;--green:#71ffad;--white:#e8fbff;--muted:#78939d}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:#02070a;color:var(--white);font-family:Arial,Helvetica,sans-serif}
+body{padding:12px}
+.app{max-width:1450px;margin:auto}
+header{height:86px;border:2px solid var(--line);background:linear-gradient(180deg,#06151c,#030c11);display:flex;align-items:center;justify-content:space-between;padding:0 26px;margin-bottom:14px;box-shadow:0 0 28px #000}
+.brand{font-weight:900;letter-spacing:.16em;font-size:clamp(16px,2.4vw,31px)}
+.live{display:flex;align-items:center;gap:12px;color:var(--muted);font-size:11px;letter-spacing:.12em}
+.led{width:13px;height:13px;background:var(--green);border-radius:50%;box-shadow:0 0 20px var(--green)}
+.grid{display:grid;grid-template-columns:7fr 5fr;gap:14px}
+.panel{background:linear-gradient(150deg,#081820,#02080c);border:2px solid var(--line);box-shadow:inset 0 0 35px #000,0 8px 28px #0008;overflow:hidden}
+.head{height:62px;border-bottom:2px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 18px;color:var(--cyan);font-weight:900;letter-spacing:.12em;font-size:clamp(13px,1.6vw,20px)}
+.head small{color:#718993;font-size:clamp(10px,1.2vw,14px);max-width:42%;line-height:1.25}
+.visual{height:500px;position:relative;background:#000}
+canvas{display:block;width:100%;height:100%}
+.label{position:absolute;left:30px;bottom:26px;border:2px solid var(--line);background:#02080dea;padding:13px 20px;min-width:250px}
+.label strong{display:block;font-size:18px;letter-spacing:.05em}.label span{font-size:15px;color:#c5e7ee;line-height:1.7}
+.metrics{grid-column:1/-1;display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.metric{height:205px;position:relative}
+.metric .head{height:45px;font-size:12px}.metric .head small{font-size:9px}
+.reading{text-align:center;font-family:"Courier New",monospace;font-weight:900;font-size:clamp(31px,4vw,55px);margin-top:31px;letter-spacing:.04em;text-shadow:0 0 15px currentColor}
+.sub{text-align:center;color:var(--muted);font-size:10px;letter-spacing:.14em;margin-top:7px}
+.bar{position:absolute;bottom:16px;left:16px;right:16px;height:4px;background:#10282f}.bar i{display:block;height:100%;width:50%;background:var(--cyan);box-shadow:0 0 12px var(--cyan)}
+footer{padding:9px 3px;color:#67818a;font-size:10px;display:flex;justify-content:space-between}
+@media(max-width:850px){body{padding:7px}.grid{grid-template-columns:1fr}.metrics{grid-template-columns:repeat(2,1fr)}.visual{height:430px}}
+@media(max-width:520px){header{height:72px;padding:0 14px}.brand{font-size:16px}.live{font-size:0}.led{width:11px;height:11px}.head{height:66px;padding:0 12px;font-size:17px}.head small{font-size:11px}.visual{height:470px}.metrics{gap:8px}.metric{height:165px}.metric .head{height:42px;font-size:10px}.reading{font-size:31px;margin-top:25px}.label{left:14px;bottom:14px;min-width:210px;padding:9px 12px}.label strong{font-size:15px}.label span{font-size:12px}}
+</style>
+</head>
+<body>
+<div class="app">
+<header>
+<div class="brand">◈ ORBITAL CONTROL // BCN</div>
+<div class="live"><span class="led"></span><span id="system">SISTEMA OPERATIU</span></div>
+</header>
+
+<div class="grid">
+<section class="panel">
+<div class="head"><span>01 · PLANETA TERRA / VISTA ZENITAL</span><small id="earthState">CALCULANT IL·LUMINACIÓ</small></div>
+<div class="visual"><canvas id="earth"></canvas>
+<div class="label"><strong id="earthPlace">BARCELONA</strong><span id="coords">41.3874° N · 2.1686° E</span></div></div>
+</section>
+
+<section class="panel">
+<div class="head"><span>02 · LLUNA / ÒRBITA LUNAR</span><small id="moonHeader">CALCULANT FASE</small></div>
+<div class="visual"><canvas id="moon"></canvas>
+<div class="label"><strong id="phase">—</strong><span id="illum">Il·luminació —</span></div></div>
+</section>
+
+<div class="metrics">
+<section class="panel metric"><div class="head"><span>03 · TEMPS LOCAL</span><small>CHRONO</small></div><div id="clock" class="reading">--:--:--</div><div class="sub">HORA LOCAL</div><div class="bar"><i></i></div></section>
+<section class="panel metric"><div class="head"><span>04 · TEMPERATURA</span><small>ENV SENSOR</small></div><div id="temp" class="reading">--.-°</div><div class="sub">CELSIUS · DADA ACTUAL</div><div class="bar"><i id="tempbar"></i></div></section>
+<section class="panel metric"><div class="head"><span>05 · ALTITUD</span><small>GNSS</small></div><div id="alt" class="reading">--- m</div><div class="sub" id="altSub">GPS DEL DISPOSITIU</div><div class="bar"><i></i></div></section>
+<section class="panel metric"><div class="head"><span>06 · HUMITAT RELATIVA</span><small>ENV SENSOR</small></div><div id="hum" class="reading">-- %</div><div class="sub">HUMITAT RELATIVA</div><div class="bar"><i id="hbar"></i></div></section>
+</div>
+</div>
+<footer><span id="location">LOCALITZACIÓ: BARCELONA</span><span>DADES DINÀMIQUES · MODE OPERATIU</span></footer>
+</div>
+
+<script>
+'use strict';
+const BCN={lat:41.3874,lon:2.1686};
+let lat=BCN.lat, lon=BCN.lon;
+const $=id=>document.getElementById(id);
+const earthCanvas=$('earth'), moonCanvas=$('moon'), ectx=earthCanvas.getContext('2d'), mctx=moonCanvas.getContext('2d');
+
+function fit(c,ctx){
+  const d=Math.min(window.devicePixelRatio||1,2), r=c.getBoundingClientRect();
+  c.width=Math.max(1,Math.floor(r.width*d)); c.height=Math.max(1,Math.floor(r.height*d));
+  ctx.setTransform(d,0,0,d,0,0);
+  return {w:r.width,h:r.height};
+}
+function starfield(ctx,w,h){
+  ctx.fillStyle='#000';ctx.fillRect(0,0,w,h);
+  let s=0x1234567;
+  for(let i=0;i<260;i++){s=(s*1664525+1013904223)>>>0;let x=(s%10000)/10000*w;s=(s*1664525+1013904223)>>>0;let y=(s%10000)/10000*h;s=(s*1664525+1013904223)>>>0;let a=.18+(s%70)/100;ctx.fillStyle=`rgba(210,245,255,${a})`;ctx.fillRect(x,y,Math.random()<.15?2:1,Math.random()<.15?2:1)}
+}
+function sunPosition(date){
+  const jd=date.getTime()/86400000+2440587.5,n=jd-2451545;
+  const g=(357.529+0.98560028*n)*Math.PI/180,L=(280.459+0.98564736*n)*Math.PI/180;
+  const lam=L+(1.914602*Math.sin(g)+0.019993*Math.sin(2*g)+0.000289*Math.sin(3*g))*Math.PI/180;
+  const eps=(23.439-0.00000036*n)*Math.PI/180;
+  const dec=Math.asin(Math.sin(eps)*Math.sin(lam));
+  const ra=Math.atan2(Math.cos(eps)*Math.sin(lam),Math.cos(lam));
+  const T=(jd-2451545)/36525;
+  const gmst=(280.46061837+360.98564736629*(jd-2451545)+0.000387933*T*T)%360;
+  const ha=((gmst-ra*180/Math.PI+lon+540)%360-180)*Math.PI/180;
+  return {dec,ha};
+}
+function drawEarth(){
+  const {w,h}=fit(earthCanvas,ectx),d=new Date();
+  starfield(ectx,w,h);
+  const R=Math.min(w,h)*.34,cx=w/2,cy=h*.49;
+  const g=ectx.createRadialGradient(cx-R*.38,cy-R*.48,R*.05,cx,cy,R*1.08);
+  g.addColorStop(0,'#48b6d2');g.addColorStop(.48,'#116083');g.addColorStop(.78,'#06364f');g.addColorStop(1,'#000b12');
+  ectx.beginPath();ectx.arc(cx,cy,R,0,Math.PI*2);ectx.fillStyle=g;ectx.fill();
+  ectx.save();ectx.beginPath();ectx.arc(cx,cy,R,0,Math.PI*2);ectx.clip();
+  // Stylised but detailed continents, rotated slowly with longitude.
+  const rot=((d.getTime()/86400000)*.01)%1, ox=rot*w*.10;
+  ectx.fillStyle='#2f7c53';
+  const land=[
+    [[-.75,-.18],[-.55,-.34],[-.36,-.26],[-.25,-.05],[-.39,.12],[-.58,.10],[-.7,.3],[-.82,.15]],
+    [[-.18,-.08],[-.02,-.22],[.14,-.18],[.22,-.02],[.12,.12],[-.04,.08]],
+    [[.22,-.32],[.45,-.38],[.66,-.22],[.72,-.03],[.55,.03],[.42,.2],[.2,.14],[.1,-.03]],
+    [[.34,.25],[.5,.18],[.63,.31],[.58,.5],[.39,.61],[.27,.44]],
+    [[-.5,.3],[-.28,.23],[-.2,.43],[-.33,.62],[-.48,.53],[-.58,.38]]
+  ];
+  for(const poly of land){ectx.beginPath();poly.forEach((p,i)=>{let x=cx+p[0]*R+ox,y=cy+p[1]*R;i?ectx.lineTo(x,y):ectx.moveTo(x,y)});ectx.closePath();ectx.fill()}
+  // clouds
+  ectx.fillStyle='rgba(235,250,255,.14)';
+  for(let i=0;i<16;i++){const a=i*1.7;ectx.beginPath();ectx.ellipse(cx+Math.cos(a)*R*.6,cy+Math.sin(a*.71)*R*.55,R*.2,R*.035,a,0,Math.PI*2);ectx.fill()}
+  // night terminator based on local solar altitude
+  const sp=sunPosition(d);
+  const phi=(90-lat)*Math.PI/180, H=sp.ha;
+  const alt=Math.asin(Math.sin(phi)*Math.sin(sp.dec)+Math.cos(phi)*Math.cos(sp.dec)*Math.cos(H));
+  const night=Math.max(0,Math.min(1,(0.25-alt)/1.0));
+  if(night>.02){ectx.fillStyle=`rgba(0,4,9,${.62+night*.25})`;ectx.beginPath();ectx.arc(cx+R*.45,cy,R*1.02,Math.PI/2,Math.PI*1.5);ectx.fill()}
+  ectx.restore();
+  ectx.strokeStyle='rgba(115,235,255,.5)';ectx.lineWidth=2;ectx.beginPath();ectx.arc(cx,cy,R+2,0,Math.PI*2);ectx.stroke();
+  const state=alt>.12?'CLAROR':alt>-.12?'PENOMBRA':'FOSCOR';$('earthState').textContent=state;
+}
+function moonAge(d){
+  const known=Date.UTC(2000,0,6,18,14,0), syn=29.530588853;
+  return ((d.getTime()-known)/86400000%syn+syn)%syn;
+}
+function drawMoon(){
+  const {w,h}=fit(moonCanvas,mctx),d=new Date();starfield(mctx,w,h);
+  const R=Math.min(w,h)*.34,cx=w/2,cy=h*.49,age=moonAge(d),p=age/29.530588853;
+  const g=mctx.createRadialGradient(cx-R*.35,cy-R*.45,R*.05,cx,cy,R*1.05);
+  g.addColorStop(0,'#fafafa');g.addColorStop(.65,'#bfc2c2');g.addColorStop(1,'#42474a');
+  mctx.beginPath();mctx.arc(cx,cy,R,0,Math.PI*2);mctx.fillStyle=g;mctx.fill();
+  mctx.save();mctx.beginPath();mctx.arc(cx,cy,R,0,Math.PI*2);mctx.clip();
+  // maria / craters
+  mctx.fillStyle='rgba(70,75,77,.25)';
+  for(let i=0;i<24;i++){const a=i*2.4,x=cx+Math.cos(a)*R*.65,y=cy+Math.sin(a*1.31)*R*.62,rr=R*(.025+(i%4)*.009);mctx.beginPath();mctx.arc(x,y,rr,0,Math.PI*2);mctx.fill()}
+  // Phase mask: 0=new, .5=full.
+  const waxing=p<.5, k=Math.cos(2*Math.PI*p);
+  mctx.fillStyle='rgba(0,3,6,.82)';
+  if(p<.5){
+    mctx.beginPath();mctx.arc(cx,cy,R,0,Math.PI*2);mctx.fill();
+    mctx.globalCompositeOperation='destination-out';
+    mctx.beginPath();mctx.ellipse(cx-R*k,cy,R*Math.abs(k),R,0,0,Math.PI*2);mctx.fill();
+    mctx.globalCompositeOperation='source-over';
+    mctx.fillStyle='rgba(205,210,210,.96)';mctx.beginPath();mctx.arc(cx,cy,R,Math.PI/2,-Math.PI/2,!waxing);mctx.fill();
+  }else{
+    mctx.beginPath();mctx.arc(cx,cy,R,0,Math.PI*2);mctx.fill();
+    mctx.globalCompositeOperation='destination-out';
+    mctx.beginPath();mctx.ellipse(cx+R*k,cy,R*Math.abs(k),R,0,0,Math.PI*2);mctx.fill();
+    mctx.globalCompositeOperation='source-over';
+    mctx.fillStyle='rgba(205,210,210,.96)';mctx.beginPath();mctx.arc(cx,cy,R,Math.PI/2,-Math.PI/2,waxing);mctx.fill();
+  }
+  mctx.restore();mctx.strokeStyle='#cdeff5';mctx.lineWidth=2;mctx.beginPath();mctx.arc(cx,cy,R+2,0,Math.PI*2);mctx.stroke();
+  let name;
+  if(p<.035||p>.965)name='Lluna nova';else if(p<.25)name='Lluna creixent';else if(p<.285)name='Quart creixent';else if(p<.5)name='Gibosa creixent';else if(p<.535)name='Lluna plena';else if(p<.75)name='Gibosa minvant';else if(p<.785)name='Quart minvant';else name='Lluna minvant';
+  const illum=Math.round((1-Math.cos(2*Math.PI*p))/2*100);
+  $('phase').textContent=name;$('illum').textContent='Il·luminació '+illum+' %';$('moonHeader').textContent=illum+' % IL·LUMINADA';
+}
+function clock(){
+  const d=new Date();$('clock').textContent=d.toLocaleTimeString('ca-ES',{hour12:false});
+}
+async function weather(){
+  try{
+    const url=`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m&timezone=auto`;
+    const r=await fetch(url,{cache:'no-store'}),x=await r.json();
+    if(x.current){
+      const t=Number(x.current.temperature_2m),h=Number(x.current.relative_humidity_2m);
+      $('temp').textContent=t.toFixed(1)+'°';$('hum').textContent=Math.round(h)+' %';
+      $('tempbar').style.width=Math.max(4,Math.min(100,(t+10)/50*100))+'%';
+      $('hbar').style.width=Math.max(4,Math.min(100,h))+'%';
+    }
+  }catch(e){$('temp').textContent='N/D';$('hum').textContent='N/D'}
+}
+function locate(){
+  if(!navigator.geolocation){weather();return}
+  navigator.geolocation.getCurrentPosition(pos=>{
+    lat=pos.coords.latitude;lon=pos.coords.longitude;
+    $('coords').textContent=lat.toFixed(4)+'° · '+lon.toFixed(4)+'°';
+    $('earthPlace').textContent='POSICIÓ ACTUAL';
+    $('location').textContent='LOCALITZACIÓ: '+lat.toFixed(4)+' · '+lon.toFixed(4);
+    if(pos.coords.altitude!=null && Number.isFinite(pos.coords.altitude)){
+      $('alt').textContent=Math.round(pos.coords.altitude)+' m';$('altSub').textContent='ALTITUD GNSS';
+    }else $('alt').textContent='N/D';
+    weather();
+  },()=>{
+    $('alt').textContent='N/D';weather();
+  },{enableHighAccuracy:true,timeout:10000,maximumAge:60000});
+}
+function render(){drawEarth();drawMoon();clock()}
+render();locate();weather();setInterval(render,1000);setInterval(weather,300000);window.addEventListener('resize',render);
+</script>
+</body>
+</html>
